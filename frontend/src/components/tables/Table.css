@@ -1,0 +1,42 @@
+
+
+.box-styles {
+    width: 1200px;
+    /**aspect-ratio: 1.618; **/
+    height: 80vh;
+    color: white;
+}
+
+.table-styles .MuiDataGrid-root {
+    background-color: #ffffff; /* Background color of the table */
+    border-radius: 8px; /* Rounded corners for the table */
+    border: 1px solid #e0e0e0; /* Border color for the table */
+    overflow: hidden;
+}
+
+.table-styles .MuiDataGrid-cell {
+    color: #2b2a37; /* Custom text color for cells */
+    font-family: Roboto, 'Open Sans', Inter;
+    font-weight:bold;
+    font-size: 16px;
+}
+
+.table-styles .MuiDataGrid-columnHeaders {
+    background-color: rgba(244,244,251,255); /* Background color for the header */
+    color: #9da0b4; /* Text color for the header */
+    font-weight: bold; /* Bold text for the header */
+    font-size: 16px; /* Font size for the header */
+}
+
+.table-styles .MuiDataGrid-row:nth-child(Even) {
+    background-color: #fafafc;
+}
+
+.table-styles .MuiDataGrid-row:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table-styles .MuiDataGrid-checkboxInput, .MuiDataGrid-sortIcon{
+    color: #01AC6A !important;;
+}
+

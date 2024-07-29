@@ -1,0 +1,21 @@
+.app-bar {
+        background-color: #01AC6A  !important;
+        position: sticky;
+        top: 0;
+        z-index: 1100;
+}
+
+.title {
+    color: white;
+    font-family: "Roboto Condensed", Sans-serif !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    text-transform: none;
+    line-height: 1em;
+    letter-spacing: 1.5px;
+}
+
+#church-icon {
+    margin: 10px 40px;
+    width: 135px;
+}

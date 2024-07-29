@@ -1,0 +1,117 @@
+/* Container for the entire tabs and content */
+#tablesContainer {
+    position: relative;
+    background-color: white;
+    width: 100%;
+    height: 100%;
+    border-radius: 25px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Box shadow for effect */
+    padding: 10px 0px;
+}
+
+/* Tab container */
+.tabs {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0px 0px ;
+    border-bottom: 1px solid #e0e0e0; /* Light border at the bottom */
+}
+
+/* Individual tab style */
+.tab-section {
+    padding: 10px 20px;
+    margin-right: 2px;
+    color:black;
+    background-color: white;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15%;
+    border-radius: 7px 7px 0 0 !important;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.tab-section.active {
+    background-color: #ffffff;
+    color:#01AC6A;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: box shadow for effect */
+}
+
+.tab-section:hover {
+    background-color: #e0e0e0;
+}
+
+/* Hide inactive tables */
+.tables > *[data-status="inactive"] {
+    display: none;
+}
+
+/* Action buttons container */
+.actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+/* Tab content container */
+.tab-content {
+    display: flex;
+    justify-content: center;
+}
+
+/* Add button style */
+.add-button {
+    width: 150px;
+    color: #ffffff !important;
+    padding: 10px 20px !important;
+    border-radius: 25px !important;
+    transition: opacity 0.5s ease !important;
+    display: flex;
+    justify-content: space-around;
+    border: 2px solid transparent !important;
+    background-color: #01AC6A !important;
+    border-color: #01AC6A !important;
+    font-family: "Roboto Condensed", Sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+}
+
+.add-button:hover {
+    opacity: 0.7;
+    background-color: white !important;
+    color: #01AC6A!important;
+    border: 2px solid transparent;
+    border-color: #01AC6A !important;
+}
+
+/* Icon margin */
+.icon-margin {
+    margin-right: 8px; /* Add margin to the right of the icon */
+}
+
+
+.glider {
+    left: calc( 23.4% + var(--activeTab) * 17.7%);
+    width: 16%;
+    padding: 0px 13px;
+    height: 4px;
+    border-radius: 0 0 1px 1px;
+    position: absolute;
+    box-shadow: 0px 0px 4px 0px hsla(115, 100%, 70%, 0.7);
+    background: linear-gradient(
+      113deg,
+      #01AC6A 0%,
+      hsl(126, 100%, 24%) 100%
+    );
+    transition: all 0.2s;
+    top: 60px;
+    z-index: 2;
+  }
+  

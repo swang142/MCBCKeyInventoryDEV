@@ -1,0 +1,46 @@
+
+.selection-action-bar {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10%;
+    height: 80px;
+    border-radius: 25px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    background-color: rgba(26,25,39,255);
+    transition: bottom 0.3s ease-in-out;
+    z-index: 100;
+}
+
+.selection-action-bar.active {
+    bottom: 55px; /* Move up into view */
+}
+
+.delete-button{
+    background-color: rgba(237,52,80,255) !important;
+    width: 100px;
+    height: 50px;
+    color: white !important;
+    transition: all 0.3s ease-in-out;
+    text-transform: none !important;
+    border: 3px solid transparent !important;
+}
+
+.MuiButton-startIcon {
+    transition: all 0.3s ease-in-out;
+}
+
+.delete-button:hover{
+    color: rgba(237,52,80,255) !important;
+    background-color: white !important;
+    border: 3px solid transparent !important;
+    border-color: rgba(237,52,80,255) !important;
+}
+
+.delete-button:hover .MuiButton-startIcon {
+    color: rgba(237,52,80,255); /* Inverted icon color */
+  }

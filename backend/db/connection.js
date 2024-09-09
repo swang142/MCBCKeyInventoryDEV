@@ -1,32 +1,15 @@
 import mysql from 'mysql2';
+import { Sequelize } from 'sequelize';
+import { config } from 'dotenv';
 
-const connectToDB = async () => {
-    try {
-        const con = await mysql.createConnection({
-            host: process.env.host,
-            user: process.env.user,
-            port: process.env.dbport,
-            password: process.env.password,
-            database: process.env.db
-          });
-        
-          console.log("Database successfully connected")
+config();
 
-          return con;
-    }
-    catch(e) {
-        return new Error("Database could not connect")
-    }
-}
+const sequelize = new Sequelize(process.env.db, process.env.user, process.env.password, {
+    host: process.env.host,       
+    dialect: 'mariadb',           
+    port: process.env.dbport
+});
 
-const disconnectFromDB =  async (connection) => {
-    try {
-        await connection.end(); 
-        console.log("Disconnected")
-    }
-    catch(e) {
-        return new Error("Could not Disconnect")
-    }
-}
+export default sequelize
 
-export { connectToDB, disconnectFromDB }
+

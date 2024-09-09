@@ -1,80 +1,94 @@
-import { Router } from "express";
-import { connectToDB } from "../db/connection.js";
+import { Router } from 'express';
+import FacilityKey from '../models/keyModel.js'; // Import your Sequelize model
 
 const keyRoutes = Router();
 
+// Get all facility keys
 keyRoutes.get('', async (req, res) => {
-    let connection;
     try {
-        connection = await connectToDB();
-        const [rows] = await connection.promise().query("SELECT * FROM facilitykeys");
-        res.json(rows);
+        const keys = await FacilityKey.findAll(); // Use Sequelize's findAll method
+        res.json(keys); // Send the result as JSON
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Could not get keys", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log any errors
+        res.status(500).json({ error: "Could not get keys", details: e.message }); // Send error response
     }
 });
 
+// Create a new facility key
 keyRoutes.post('/create', async (req, res) => {
     const { KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey } = req.body;
 
     if (!KeyType || !Zone || !KeyUsage || !KeyName) {
-        return res.status(400).send('Required fields cannot be blank');
+        return res.status(400).send('Required fields cannot be blank'); // Validate required fields
     }
 
-    let connection; 
     try {
-        connection = await connectToDB();
-        const query = "INSERT INTO facilitykeys (KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        await connection.execute(query, [KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey]);
-        res.json({ add: { KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey }, message: 'Creation successful' });
+        const newKey = await FacilityKey.create({ // Use Sequelize's create method
+            KeyType,
+            Zone,
+            KeyUsage,
+            KeyName,
+            KeyDesc,
+            KeyTag,
+            TotalNumberOfKey,
+            NumberOfSpareKey
+        });
+        res.json({ add: newKey, message: 'Creation successful' }); // Send success response
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Could not add key", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log any errors 
+        res.status(500).json({ error: "Could not add key", details: e.message }); // Send error response
     }
 });
 
+// Update an existing facility key
 keyRoutes.put('/update/:keyID', async (req, res) => {
     const { keyID } = req.params;
     const { KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey } = req.body;
 
-    if (!keyID || !KeyType || !Zone || !KeyUsage || !KeyName) {
-        return res.status(400).send('Required fields cannot be blank');
+    if (!KeyType || !Zone || !KeyUsage || !KeyName) {
+        return res.status(400).send('Required fields cannot be blank'); // Validate required fields
     }
 
-    let connection;
     try {
-        connection = await connectToDB();
-        const query = "UPDATE facilitykeys SET KeyType = ?, Zone = ?, KeyUsage = ?, KeyName = ?, KeyDesc = ?, KeyTag = ?, TotalNumberOfKey = ?, NumberOfSpareKey = ? WHERE KeyID = ?";
-        await connection.execute(query, [KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey, keyID]);
-        res.json({ updated: { keyID, KeyType, Zone, KeyUsage, KeyName, KeyDesc, KeyTag, TotalNumberOfKey, NumberOfSpareKey }, message: 'Update successful' });
+        const key = await FacilityKey.findByPk(keyID); // Find the key by its primary key (KeyID)
+        if (!key) {
+            return res.status(404).json({ message: 'Key not found' }); // Handle if key is not found
+        }
+
+        await key.update({ // Use Sequelize's update method
+            KeyType,
+            Zone,
+            KeyUsage,
+            KeyName,
+            KeyDesc,
+            KeyTag,
+            TotalNumberOfKey,
+            NumberOfSpareKey
+        });
+
+        res.json({ updated: key, message: 'Update successful' }); // Send success response
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Could not update key", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log any errors
+        res.status(500).json({ error: "Could not update key", details: e.message }); // Send error response
     }
 });
 
+// Delete a facility key
 keyRoutes.delete('/delete/:keyID', async (req, res) => {
     const { keyID } = req.params;
 
-    let connection;
     try {
-        connection = await connectToDB();
-        const query = "DELETE FROM facilitykeys WHERE KeyID = ?";
-        await connection.execute(query, [keyID]);
-        res.json({ message: 'Record deleted successfully' });
+        const key = await FacilityKey.findByPk(keyID); // Find the key by primary key (KeyID)
+        if (!key) {
+            return res.status(404).json({ message: 'Key not found' }); // Handle if key is not found
+        }
+
+        await key.destroy(); // Use Sequelize's destroy method to delete the key
+        res.json({ message: 'Record deleted successfully' }); // Send success response
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Could not delete key", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log any errors
+        res.status(500).json({ error: "Could not delete key", details: e.message }); // Send error response
     }
 });
 
-export default keyRoutes;
+export default keyRoutes; // Export the router for use in other modules

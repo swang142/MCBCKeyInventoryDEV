@@ -1,88 +1,82 @@
-import { Router } from "express";
-import { connectToDB } from "../db/connection.js";
+import { Router } from 'express';
+import Keyholder from '../models/keyholderModel.js'; // Import the Keyholder Sequelize model
+import FacilityKeyTransaction from '../models/keyTransactionModel.js'; // Import the Transaction model for updating
 
 const keyholderRoutes = Router();
 
+// Get all keyholders
 keyholderRoutes.get('', async (req, res) => {
-    let connection;
     try {
-        connection = await connectToDB();
-        const response = await connection.promise().query("SELECT * FROM keyholders")
-        res.json(response[0]);
+        const keyholders = await Keyholder.findAll(); // Use Sequelize's findAll method
+        res.json(keyholders); // Send the result as JSON
+    } catch (e) {
+        console.error(e); // Log the error for debugging
+        res.status(500).json({ error: "Could not get keyholders", details: e.message }); // Send error response
     }
-    catch(e){
-        return new Error("could not get keyholders");
-    }
-    finally{
-        if (connection) await connection.end();
-    }
-})
+});
 
+// Create a new keyholder
 keyholderRoutes.post('/create', async (req, res) => {
     const { holderName } = req.body;
 
     if (!holderName) {
-        return res.status(400).send('Fields cannot be blank');
+        return res.status(400).send('Fields cannot be blank'); // Validate required fields
     }
 
-    let connection;
     try {
-        connection = await connectToDB();
-        const query = "INSERT INTO keyholders (HolderName) VALUES (?)";
-        await connection.execute(query, [holderName]);
-        res.json({ name: { holderName }, message: 'Creation successful' });
+        const newKeyholder = await Keyholder.create({ // Use Sequelize's create method
+            HolderName: holderName
+        });
+        res.json({ name: newKeyholder, message: 'Creation successful' }); // Send success response
     } catch (e) {
-        console.error(e); 
-        res.status(500).json({ error: "Could not add Keyholder", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log the error for debugging
+        res.status(500).json({ error: "Could not add Keyholder", details: e.message }); // Send error response
     }
-})
+});
 
+// Update an existing keyholder
 keyholderRoutes.put('/update/:holderID', async (req, res) => {
     const { holderID } = req.params;
     const { holderName } = req.body;
 
     if (!holderID || !holderName) {
-        return res.status(400).send('Fields cannot be blank');
+        return res.status(400).send('Fields cannot be blank'); // Validate required fields
     }
 
-    let connection;
     try {
-        connection = await connectToDB();
+        const keyholder = await Keyholder.findByPk(holderID); // Find the keyholder by primary key (HolderID)
+        if (!keyholder) {
+            return res.status(404).json({ message: 'Keyholder not found' }); // Handle if keyholder not found
+        }
 
-        const query = "UPDATE keyholders SET HolderName = ? WHERE HolderID = ?";
-        await connection.execute(query, [holderName, holderID]);
+        await keyholder.update({ HolderName: holderName }); // Update the keyholder record
 
-        const query2 = "UPDATE facilitykeytransactions SET HolderName = ? WHERE HolderID = ?";
-        await connection.execute(query2, [holderName, holderID])
-        
-        res.json({ updated: { holderID, holderName }, message: 'Update successful' });
+        // Also update any related transactions where this keyholder was involved
+        await FacilityKeyTransaction.update({ HolderName: holderName }, { where: { HolderID: holderID } });
+
+        res.json({ updated: keyholder, message: 'Update successful' }); // Send success response
     } catch (e) {
-        console.error(e); 
-        res.status(500).json({ error: "Could not update keyholders", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        console.error(e); // Log the error for debugging
+        res.status(500).json({ error: "Could not update keyholders", details: e.message }); // Send error response
     }
 });
 
+// Delete a keyholder
 keyholderRoutes.delete('/delete/:holderID', async (req, res) => {
     const { holderID } = req.params;
 
-    let connection;
     try {
-        connection = await connectToDB();
-        const query = "DELETE FROM keyholders WHERE HolderID = ?";
-        await connection.execute(query, [holderID])
-        res.json({ message: 'Record deleted successfully' });
+        const keyholder = await Keyholder.findByPk(holderID); // Find the keyholder by primary key (HolderID)
+        if (!keyholder) {
+            return res.status(404).json({ message: 'Keyholder not found' }); // Handle if keyholder not found
+        }
+
+        await keyholder.destroy(); // Use Sequelize's destroy method to delete the keyholder
+        res.json({ message: 'Record deleted successfully' }); // Send success response
     } catch (e) {
         console.error(e); // Log the error for debugging
-        res.status(500).json({ error: "Could not delete keyholder", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        res.status(500).json({ error: "Could not delete keyholder", details: e.message }); // Send error response
     }
-})
+});
 
-
-
-export default keyholderRoutes;
+export default keyholderRoutes; // Export the router for use in other modules

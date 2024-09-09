@@ -7,17 +7,25 @@ import keyRoutes from "./routes/key-routes.js";
 import keyholderRoutes from "./routes/keyholder-routes.js";
 import cors from 'cors';
 import { config } from 'dotenv';
+import userRoutes from "./routes/user-routes.js";
+import sequelize from './db/connection.js'; // Import Sequelize instance
 
+// Load environment variables from .env file
 config();
 
 const app = express();
 
+// Enable CORS for cross-origin requests
 app.use(cors());
+
+// Parse incoming JSON requests
 app.use(express.json());
 
-app.use("/api/transactions", transactionRoutes);
-app.use("/api/keys", keyRoutes);
-app.use("/api/keyholders", keyholderRoutes);
+// Define API routes
+app.use("/api/transactions", transactionRoutes); // Handle transactions-related requests
+app.use("/api/keys", keyRoutes); // Handle keys-related requests
+app.use("/api/keyholders", keyholderRoutes); // Handle keyholders-related requests
+app.use("/api/users", userRoutes);
 
 // Serve static files from the React app
 const __filename = fileURLToPath(import.meta.url); // Resolve __dirname for ES modules
@@ -29,7 +37,6 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // Catch all requests and send the React app
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
-  });
-
+});
 
 export default app;

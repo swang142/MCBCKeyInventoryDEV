@@ -1,159 +1,153 @@
 import { Router } from "express";
-import { connectToDB } from "../db/connection.js";
+import FacilityKeyTransaction from "../models/keyTransactionModel.js";
+import FacilityKey from "../models/keyModel.js";
+import Keyholder from "../models/keyholderModel.js";
 
 const transactionRoutes = Router();
 
+// Get transaction history
 transactionRoutes.get('/history', async (req, res) => {
-    let connection;
     try {
-        connection = await connectToDB();
-        const response = await connection.promise().query("SELECT * FROM facilitykeytransactions");
-        res.json(response[0]);
-    }
-    catch(e){
-        return new Error("could not get transactions");
-    }
-    finally{
-        if (connection) await connection.end();
-    }
-});
-
-transactionRoutes.post('/create', async (req, res) => {
-    const { keyID, holderID, type, count } = req.body;
-
-    console.log({ keyID, holderID, type, count });
-
-    if (!keyID || !holderID || !type || count === undefined) {
-        return res.status(400).send('Fields cannot be blank');
-    }
-
-    let connection;
-    try {
-        connection = await connectToDB();
-        
-        // Check if enough spare keys are available for TAKE OUT
-        if (type === 'TAKE OUT') {
-            const [keyData] = await connection.promise().query("SELECT NumberOfSpareKey FROM facilitykeys WHERE KeyID = ?", [keyID]);
-            if ( keyData[0].NumberOfSpareKey < count) {
-                return res.status(400).send('Not enough spare keys available');
-            }
-        }
-        else if (type === 'RETURN') {
-            const [keyData] = await connection.promise().query("SELECT * FROM facilitykeys WHERE KeyID = ?", [keyID]);
-            if(count + keyData[0].NumberOfSpareKey > keyData[0].TotalNumberOfKey){
-                return res.status(400).send('You have attempted to return too many keys');
-            }
-        }
-
-        const [holderElement] = await connection.promise().execute("SELECT holderName FROM keyholders WHERE HolderID = ?", [holderID])
-        const holderName = holderElement[0].holderName
-        
-        const query = "INSERT INTO facilitykeytransactions (HolderName, KeyID, HolderID, TransactionType, Count) VALUES (?, ?, ?, ?, ?)";
-        await connection.promise().execute(query, [holderName, keyID, holderID, type, count]);
-
-        // Update the spare keys count
-        const updateQuery = type === 'TAKE OUT' ? 
-            "UPDATE facilitykeys SET NumberOfSpareKey = NumberOfSpareKey - ? WHERE KeyID = ?" : 
-            "UPDATE facilitykeys SET NumberOfSpareKey = NumberOfSpareKey + ? WHERE KeyID = ?";
-        await connection.promise().execute(updateQuery, [count, keyID]);
-
-        res.json({ add: { holderID, keyID, type, count }, message: 'Creation successful' });
+        const transactions = await FacilityKeyTransaction.findAll(); // Fetch all transactions
+        res.json(transactions); // Send the result as JSON
     } catch (e) {
         console.error(e); // Log the error for debugging
-        res.status(500).json({ error: "Could not add transaction", details: e.message });
-    } finally {
-        if (connection) await connection.end();
+        res.status(500).json({ error: "Could not get transactions", details: e.message }); // Send error response
     }
 });
 
+// Create a new transaction
+transactionRoutes.post('/create', async (req, res) => {
+
+    const { keyID, holderID, type, count } = req.body;
+
+    if (!keyID || !holderID || !type || count === undefined) {
+        return res.status(400).send('Fields cannot be blank'); // Validate required fields
+    }
+
+    try {
+        const facilityKey = await FacilityKey.findByPk(keyID); // Find the key by primary key
+        if (!facilityKey) return res.status(404).send('Key not found'); // Handle if key not found
+
+        // Check for TAKE OUT or RETURN transactions
+        if (type === 'TAKE OUT' && facilityKey.NumberOfSpareKey < count) {
+            return res.status(400).send('Not enough spare keys available');
+        } else if (type === 'RETURN' && count + facilityKey.NumberOfSpareKey > facilityKey.TotalNumberOfKey) {
+            return res.status(400).send('You have attempted to return too many keys');
+        }
+
+        const holderElement = await Keyholder.findByPk(holderID);
+        const holderName = holderElement.dataValues.HolderName
+        console.log(holderName)
+
+        // Insert new transaction
+        const newTransaction = await FacilityKeyTransaction.create({
+            KeyID: keyID,
+            HolderName: holderName,
+            HolderID: holderID,
+            TransactionType: type,
+            Count: count
+        });
+
+        // Update the spare keys count
+        if (type === 'TAKE OUT') {
+            facilityKey.NumberOfSpareKey -= count;
+        } else if (type === 'RETURN') {
+            facilityKey.NumberOfSpareKey += count;
+        }
+
+        await facilityKey.save(); // Save the updated facility key record
+
+        res.json({ add: newTransaction, message: 'Creation successful' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Could not add transaction", details: e.message });
+    }
+});
+
+// Update an existing transaction
 transactionRoutes.put('/update/:id', async (req, res) => {
     const { id } = req.params;
     const { keyID, holderID, type, count } = req.body;
-    
+
     if (!id || !keyID || !holderID || !type || count === undefined) {
         return res.status(400).send('Fields cannot be blank');
     }
 
-    let connection;
     try {
-        connection = await connectToDB();
+        const transaction = await FacilityKeyTransaction.findByPk(id); // Find transaction by primary key
+        const facilityKey = await FacilityKey.findByPk(keyID); // Find the key by primary key
 
-        // Since updating may change the type or count, you need to adjust the NumberOfSpareKey accordingly
-        // Fetch the original transaction
-        const [originalTransaction] = await connection.promise().query("SELECT * FROM facilitykeytransactions WHERE id = ?", [id]);
-        const originalType = originalTransaction[0].TransactionType;
-        const originalCount = originalTransaction[0].Count;
+        if (!transaction || !facilityKey) {
+            return res.status(404).send('Transaction or Key not found');
+        }
 
-        const [keyLookup] = await connection.promise().query("SELECT * FROM facilitykeys WHERE KeyID = ?", [keyID])
-        const spareKeyNumber = keyLookup[0].NumberOfSpareKey;
-        const totalKeyNumber = keyLookup[0].TotalNumberOfKey;
+        const originalType = transaction.TransactionType;
+        const originalCount = transaction.Count;
 
-        let resetKeyNum;
-
-        if (originalType === 'TAKE OUT'){
-            resetKeyNum = spareKeyNumber + originalCount;
+        // Adjust spare keys based on the original transaction
+        if (originalType === 'TAKE OUT') {
+            facilityKey.NumberOfSpareKey += originalCount;
         } else if (originalType === 'RETURN') {
-            resetKeyNum = spareKeyNumber - originalCount;
+            facilityKey.NumberOfSpareKey -= originalCount;
         }
 
-        if ( type === 'TAKE OUT') {
-            const newKeyNum = resetKeyNum - count;
-            if(newKeyNum < 0){
-                return res.status(400).send('Not enough spare keys available');
-            } else {
-                await connection.promise().execute("UPDATE facilitykeys SET NumberOfSpareKey =  ? WHERE KeyID = ?", [newKeyNum, keyID]);
-            }
-        } else if (type === 'RETURN'){
-            const newKeyNum = resetKeyNum + count;
-            if(newKeyNum > totalKeyNumber) {
-                return res.status(400).send('You have attempted to return too many keys');
-            } else {
-                await connection.promise().execute("UPDATE facilitykeys SET NumberOfSpareKey = ? WHERE KeyID = ?", [newKeyNum, keyID]);
-            }
+        // Handle new transaction type
+        if (type === 'TAKE OUT' && facilityKey.NumberOfSpareKey < count) {
+            return res.status(400).send('Not enough spare keys available');
+        } else if (type === 'RETURN' && count + facilityKey.NumberOfSpareKey > facilityKey.TotalNumberOfKey) {
+            return res.status(400).send('You have attempted to return too many keys');
         }
-        
 
-        const query = "UPDATE facilitykeytransactions SET KeyID = ?, HolderID = ?, TransactionType = ?, Count = ? WHERE id = ?";
-        await connection.promise().execute(query, [keyID, holderID, type, count, id]);
+        // Update spare key count for the new transaction type
+        if (type === 'TAKE OUT') {
+            facilityKey.NumberOfSpareKey -= count;
+        } else if (type === 'RETURN') {
+            facilityKey.NumberOfSpareKey += count;
+        }
 
-        res.json({ updated: { id, holderID, keyID, type, count }, message: 'Update successful' });
-    } catch (e) {   
-        console.error(e); // Log the error for debugging
+        await facilityKey.save(); // Save the updated facility key record
+
+        // Update the transaction record
+        await transaction.update({
+            KeyID: keyID,
+            HolderID: holderID,
+            TransactionType: type,
+            Count: count
+        });
+
+        res.json({ updated: transaction, message: 'Update successful' });
+    } catch (e) {
+        console.error(e);
         res.status(500).json({ error: "Could not update transaction", details: e.message });
-    } finally {
-        if (connection) await connection.end();
     }
 });
 
+// Delete a transaction
 transactionRoutes.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
 
-    let connection;
     try {
-        connection = await connectToDB();
+        const transaction = await FacilityKeyTransaction.findByPk(id); // Find transaction by primary key
+        if (!transaction) return res.status(404).send('Transaction not found');
 
-        // Fetch the original transaction before deleting
-        const [originalTransaction] = await connection.promise().query("SELECT * FROM facilitykeytransactions WHERE id = ?", [id]);
+        const facilityKey = await FacilityKey.findByPk(transaction.KeyID); // Find the key by primary key
+        if (!facilityKey) return res.status(404).send('Key not found');
 
-        const query = "DELETE FROM facilitykeytransactions WHERE id = ?";
-        await connection.promise().execute(query, [id]);
-
-        if (originalTransaction.length) {
-            const { KeyID, TransactionType, Count } = originalTransaction[0];
-            
-            if (TransactionType === 'TAKE OUT') {
-                await connection.promise().execute("UPDATE facilitykeys SET NumberOfSpareKey = NumberOfSpareKey + ? WHERE KeyID = ?", [Count, KeyID]);
-            } else if (TransactionType === 'RETURN') {
-                await connection.promise().execute("UPDATE facilitykeys SET NumberOfSpareKey = NumberOfSpareKey - ? WHERE KeyID = ?", [Count, KeyID]);
-            }
+        // Adjust the spare keys count based on the transaction type
+        if (transaction.TransactionType === 'TAKE OUT') {
+            facilityKey.NumberOfSpareKey += transaction.Count;
+        } else if (transaction.TransactionType === 'RETURN') {
+            facilityKey.NumberOfSpareKey -= transaction.Count;
         }
+
+        await facilityKey.save(); // Save the updated facility key record
+        await transaction.destroy(); // Delete the transaction record
 
         res.json({ message: 'Record deleted successfully' });
     } catch (e) {
-        console.error(e); // Log the error for debugging
+        console.error(e);
         res.status(500).json({ error: "Could not delete transaction", details: e.message });
-    } finally {
-        if (connection) await connection.end();
     }
 });
 

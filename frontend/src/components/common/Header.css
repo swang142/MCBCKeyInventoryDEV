@@ -5,6 +5,21 @@
         z-index: 1100;
 }
 
+.header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.right-section {
+    display: flex;
+    align-items: center;
+}
+
+.left-section {
+    display: flex;
+    align-items: center;
+}
+
 .title {
     color: white;
     font-family: "Roboto Condensed", Sans-serif !important;
@@ -13,6 +28,23 @@
     text-transform: none;
     line-height: 1em;
     letter-spacing: 1.5px;
+}
+
+.header-button {
+    color: #ffffff !important;
+    padding: 10px 20px !important;
+    border-radius: 25px !important;
+    transition: opacity 0.5s ease !important;
+    display: flex;
+    justify-content: space-around;
+    font-family: "Roboto Condensed", Sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+}
+
+.header-button:hover {
+    opacity: 0.5;
+    border-color: #01AC6A !important;
 }
 
 #church-icon {

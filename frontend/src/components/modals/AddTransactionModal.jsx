@@ -1,17 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import Modal from '@mui/material/Modal';
-import TextField from '@mui/material/TextField';
+import Input from '@mui/material/Input';
+import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import { Box, Button, Input } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import './modal.css';
-import { createNewTransaction, getKeys } from '../../../api/apicommunicator';
+import { createNewTransaction } from '../../../api/apicommunicator';
 import toast from 'react-hot-toast';
 
-const AddTransactionModal = ({open, handleClose, setTrigger}) => {
-
+const AddTransactionModal = ({ open, handleClose, setTrigger }) => {
+  // State to manage form data
   const [formData, setFormData] = useState({
     keyid: '',
     holderid: '',
@@ -19,6 +18,7 @@ const AddTransactionModal = ({open, handleClose, setTrigger}) => {
     keyCount: 1
   });
 
+  // Update form data state on input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -27,103 +27,99 @@ const AddTransactionModal = ({open, handleClose, setTrigger}) => {
     });
   };
 
-  const handleSubmit =  async (e) => {
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const keyID = formData['keyid'];
-    const holderID = formData['holderid'];
-    const transactionType = formData['transactionType'];
-    const keyCount = formData['keyCount'];
+    const { keyid, holderid, transactionType, keyCount } = formData;
     
-    try{ 
-      const result = await createNewTransaction(keyID, holderID, transactionType, keyCount);
-      toast.success("Transaction created successfully!")
-      handleClose();
-    }
-    catch (e){
-      if(e.response){
-        toast.error(`Error: ${e.response.data}`);
+    try {
+      await createNewTransaction(keyid, holderid, transactionType, keyCount); // API call to create new transaction
+      toast.success("Transaction created successfully!"); // Show success message
+      handleClose(); // Close the modal
+    } catch (e) {
+      if (e.response) {
+        toast.error(`Error: ${e.response.data}`); // Show error message
       }
     }
-    setTrigger(prev => !prev);
-
+    setTrigger(prev => !prev); // Refresh trigger (e.g., to update a list)
   };
 
   return (
     <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-        className="modal"
+      open={open} // Control modal visibility
+      onClose={handleClose} // Close modal handler
+      aria-labelledby="modal-title" // Accessible title
+      aria-describedby="modal-description" // Accessible description
+      className="modal" // Custom styling for the modal
     >
-       <Box className="modal-container">
-            <button className="close-button" onClick={handleClose}>×</button>
-            <h2 id="modal-title"> Add New Transaction</h2>
-            <form onSubmit={handleSubmit}>
-              <Box>
-              <Input
-                  id="keyid"
-                  name="keyid"
-                  value={formData.keyid}
-                  onChange={handleChange}
-                  fullWidth
-                  className= {`modal-input ${formData.keyid ? 'has-text' : ''}`}
-                  disableUnderline
-                />
-                <InputLabel htmlFor="keyid" className="form-label">Key ID</InputLabel>
-              </Box>
-              <Box>
-                <Input
-                  id="holderid"
-                  name="holderid"
-                  value={formData.holderid}
-                  onChange={handleChange}
-                  fullWidth
-                  className= {`modal-input ${formData.holderid ? 'has-text' : ''}`}
-                  disableUnderline
-                />
-                <InputLabel htmlFor="holderid" className="form-label">Holder ID</InputLabel>
-              </Box>
+      <Box className="modal-container">
+        <button className="close-button" onClick={handleClose}>×</button> {/* Close button */}
+        <h2 id="modal-title">Add New Transaction</h2> {/* Modal title */}
+        <form onSubmit={handleSubmit}>
+          <Box>
+            <Input
+              id="keyid"
+              name="keyid"
+              value={formData.keyid}
+              onChange={handleChange} // Update formData on input change
+              fullWidth
+              className={`modal-input ${formData.keyid ? 'has-text' : ''}`}
+              disableUnderline
+            />
+            <InputLabel htmlFor="keyid" className="form-label">Key ID</InputLabel>
+          </Box>
+          <Box>
+            <Input
+              id="holderid"
+              name="holderid"
+              value={formData.holderid}
+              onChange={handleChange} // Update formData on input change
+              fullWidth
+              className={`modal-input ${formData.holderid ? 'has-text' : ''}`}
+              disableUnderline
+            />
+            <InputLabel htmlFor="holderid" className="form-label">Holder ID</InputLabel>
+          </Box>
 
-              <Box className= "dropdown-menu"> 
-                <Select
-                  name="transactionType"
-                  value={formData.transactionType}
-                  onChange={handleChange}
-                  label="Transaction Type"
-                  className = 'modal-input'
-                >
-                  <MenuItem value="TAKE OUT">TAKE OUT</MenuItem>
-                  <MenuItem value="RETURN">RETURN</MenuItem>
-                </Select>
-                <InputLabel className="form-label-nonmoving">Transaction Type</InputLabel>
-              </Box>
+          <Box className="dropdown-menu">
+            <Select
+              name="transactionType"
+              value={formData.transactionType}
+              onChange={handleChange} // Update formData on selection change
+              label="Transaction Type"
+              className="modal-input"
+            >
+              <MenuItem value="TAKE OUT">TAKE OUT</MenuItem>
+              <MenuItem value="RETURN">RETURN</MenuItem>
+            </Select>
+            <InputLabel className="form-label-nonmoving">Transaction Type</InputLabel>
+          </Box>
 
-              <Box>
-                <Input
-                  id="count"
-                  name="keyCount"
-                  value={formData.keyCount}
-                  onChange={handleChange}
-                  fullWidth
-                  className="modal-input"
-                  disableUnderline
-                  type="number"
-                  required
-                  inputProps={{ min: 1 }} 
-                />
-                <InputLabel htmlFor="keyCount" className="form-label-nonmoving">Count</InputLabel>
-              </Box>
+          <Box>
+            <Input
+              id="count"
+              name="keyCount"
+              value={formData.keyCount}
+              onChange={handleChange} // Update formData on input change
+              fullWidth
+              className="modal-input"
+              disableUnderline
+              type="number" // Numeric input type for count
+              required
+              inputProps={{ min: 1 }} // Set minimum value for keyCount
+            />
+            <InputLabel htmlFor="keyCount" className="form-label-nonmoving">Count</InputLabel>
+          </Box>
 
-            <Box className="actions-bar" >
-              <Button type="submit" className= "submit-button">
-                Submit  
-              </Button>
-            </Box>  
-          </form>
-       </Box>
+          <Box className="actions-bar">
+            <Button type="submit" className="submit-button" variant="contained" color="primary">
+              Submit
+            </Button>
+          </Box>
+        </form>
+      </Box>
     </Modal>
-  )
-}
+  );
+};
 
 export default AddTransactionModal;

@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
 import Modal from '@mui/material/Modal';
 import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import { Box, Button, Input } from '@mui/material';
+import { Box, Button, Input, InputLabel } from '@mui/material';
 import './modal.css';
 import { createNewKeyholder } from '../../../api/apicommunicator';
 import toast from 'react-hot-toast';
 
 const AddKeyholderModal = ({ open, handleClose, setTrigger }) => {
+  // State to manage form input data
   const [formData, setFormData] = useState({
     holderName: '',
   });
 
+  // Update formData state when input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -23,41 +21,41 @@ const AddKeyholderModal = ({ open, handleClose, setTrigger }) => {
     });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const holderName = formData['holderName'];
+    const { holderName } = formData;
     
     try {
-      await createNewKeyholder(holderName);
-      toast.success("Keyholder created successfully!");
-      handleClose();
+      await createNewKeyholder(holderName); // API call to create keyholder
+      toast.success("Keyholder created successfully!"); // Show success message
+      handleClose(); // Close the modal
     } catch (e) {
       if (e.response) {
-        toast.error(`Error: ${e.response.data}`);
+        toast.error(`Error: ${e.response.data}`); // Show error message
       }
     }
-    setTrigger((prev) => !prev);
-    console.log('New keyholder added:', formData);
+    setTrigger(prev => !prev); // Trigger refresh (e.g., to update a list)
   };
 
   return (
     <Modal
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="modal-title"
-      aria-describedby="modal-description"
-      className="modal"
+      open={open} // Control modal visibility
+      onClose={handleClose} // Close modal handler
+      aria-labelledby="modal-title" // Accessible title
+      aria-describedby="modal-description" // Accessible description
+      className="modal" // Custom styling for the modal
     >
       <Box className="modal-container">
-        <button className="close-button" onClick={handleClose}>×</button>
-        <h2 id="modal-title">Add New Keyholder</h2>
+        <button className="close-button" onClick={handleClose}>×</button> {/* Close button */}
+        <h2 id="modal-title">Add New Keyholder</h2> {/* Modal title */}
         <form onSubmit={handleSubmit}>
           <Box>
             <Input
               id="holderName"
               name="holderName"
               value={formData.holderName}
-              onChange={handleChange}
+              onChange={handleChange} // Update formData on input change
               fullWidth
               className={`modal-input ${formData.holderName ? 'has-text' : ''}`}
               disableUnderline

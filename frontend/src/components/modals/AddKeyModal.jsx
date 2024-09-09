@@ -8,6 +8,7 @@ import { createNewKey } from '../../../api/apicommunicator';
 import toast from 'react-hot-toast';
 
 const AddKeyModal = ({ open, handleClose, setTrigger }) => {
+  // State to manage form input data
   const [formData, setFormData] = useState({
     KeyType: '',
     Zone: '',
@@ -19,6 +20,7 @@ const AddKeyModal = ({ open, handleClose, setTrigger }) => {
     NumberOfSpareKey: ''
   });
 
+  // Update formData state when input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -27,138 +29,53 @@ const AddKeyModal = ({ open, handleClose, setTrigger }) => {
     });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createNewKey(formData);
-      toast.success("Key created successfully!");
-      handleClose();
+      await createNewKey(formData); // API call to create new key
+      toast.success("Key created successfully!"); // Show success message
+      handleClose(); // Close the modal
     } catch (e) {
       if (e.response) {
-        toast.error(`Error: ${e.response.data}`);
+        toast.error(`Error: ${e.response.data}`); // Show error message
       }
     }
-    setTrigger(prev => !prev);
+    setTrigger(prev => !prev); // Refresh trigger (e.g., to update a list)
   };
 
   return (
     <Modal
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="modal-title"
-      aria-describedby="modal-description"
-      className="modal"
+      open={open} // Control modal visibility
+      onClose={handleClose} // Close modal handler
+      aria-labelledby="modal-title" // Accessible title
+      aria-describedby="modal-description" // Accessible description
+      className="modal" // Custom styling for the modal
     >
       <Box className="modal-container">
-        <button className="close-button" onClick={handleClose}>×</button>
-        <h2 id="modal-title">Add New Key</h2>
+        <button className="close-button" onClick={handleClose}>×</button> {/* Close button */}
+        <h2 id="modal-title">Add New Key</h2> {/* Modal title */}
         <form onSubmit={handleSubmit}>
-          <Box>
-            <Input
-              id="KeyType"
-              name="KeyType"
-              value={formData.KeyType}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.KeyType ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="KeyType" className="form-label">Key Type</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="Zone"
-              name="Zone"
-              value={formData.Zone}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.Zone ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="Zone" className="form-label">Zone</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="KeyUsage"
-              name="KeyUsage"
-              value={formData.KeyUsage}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.KeyUsage ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="KeyUsage" className="form-label">Key Usage</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="KeyName"
-              name="KeyName"
-              value={formData.KeyName}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.KeyName ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="KeyName" className="form-label">Key Name</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="KeyDesc"
-              name="KeyDesc"
-              value={formData.KeyDesc}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.KeyDesc ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="KeyDesc" className="form-label">Key Description</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="KeyTag"
-              name="KeyTag"
-              value={formData.KeyTag}
-              onChange={handleChange}
-              fullWidth
-              className={`modal-input ${formData.KeyTag ? 'has-text' : ''}`}
-              disableUnderline
-              required
-            />
-            <InputLabel htmlFor="KeyTag" className="form-label">Key Tag</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="TotalNumberOfKey"
-              name="TotalNumberOfKey"
-              value={formData.TotalNumberOfKey}
-              onChange={handleChange}
-              fullWidth
-              className="modal-input"
-              disableUnderline
-              type="number"
-              required
-            />
-            <InputLabel htmlFor="TotalNumberOfKey" className="form-label-nonmoving">Total Number Of Keys</InputLabel>
-          </Box>
-          <Box>
-            <Input
-              id="NumberOfSpareKey"
-              name="NumberOfSpareKey"
-              value={formData.NumberOfSpareKey}
-              onChange={handleChange}
-              fullWidth
-              className= "modal-input"
-              disableUnderline
-              type="number"
-              required
-            />
-            <InputLabel htmlFor="NumberOfSpareKey" className="form-label-nonmoving">Number Of Spare Keys</InputLabel>
-          </Box>
+          {/* Render form fields dynamically based on formData */}
+          {Object.keys(formData).map((key) => (
+            <Box key={key}>
+              <Input
+                id={key}
+                name={key}
+                value={formData[key]}
+                onChange={handleChange} // Update formData on input change
+                fullWidth
+                className={`modal-input ${formData[key] ? 'has-text' : ''}`}
+                disableUnderline
+                type={key.includes('Number') ? 'number' : 'text'} // Set input type based on field name
+                required // Make field required
+              />
+              <InputLabel htmlFor={key} className={`form-label${key.includes('Number') ? '-nonmoving' : ''}`}>
+                {/* Format label text to be more readable */}
+                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </InputLabel>
+            </Box>
+          ))}
           <Box className="actions-bar">
             <Button type="submit" className="submit-button" variant="contained" color="primary">
               Submit

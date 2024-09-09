@@ -10,13 +10,23 @@ import AddModal from './components/modals/AddTransactionModal'
 import Footer from './components/common/Footer'
 import Header from './components/common/Header'
 import { Toaster } from 'react-hot-toast';
+import { BrowserRouter, Route, Router, RouterProvider, Routes, createBrowserRouter } from 'react-router-dom'
+import LoginLayout from './components/layout/LoginLayout'
+import { RequireAuth } from 'react-auth-kit'
+import RegistrationLayout from './components/layout/RegistrationLayout'
 
 function App() {
   return (
-    <>
-      <Header /> 
-      <PageLayout />
-      <Footer />
+    <>  
+      <BrowserRouter>
+        <Header /> 
+          <Routes>
+            <Route path="/" element={ <RequireAuth loginPath="/login"> <PageLayout /> </RequireAuth> }> </Route>
+            <Route path="/login" element = {<LoginLayout/>}></Route>
+            <Route path="/register" element = {<RegistrationLayout/>}></Route>
+          </Routes>
+        <Footer />
+      </BrowserRouter>
       <Toaster
         position="top-center"
         reverseOrder={false}
